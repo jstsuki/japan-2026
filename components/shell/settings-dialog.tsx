@@ -2,17 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Printer, RotateCcw, Upload } from "lucide-react";
+import { CloudOff, Download, KeyRound, Printer, RefreshCw, RotateCcw, Upload, Users } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { sanitize, useTrip } from "@/components/providers/trip-store";
+import { sanitize, useTrip, type SyncStatus } from "@/components/providers/trip-store";
 import { DAYS } from "@/data/days";
 import { RESERVATIONS } from "@/data/reservations";
 import { dayActivities, STATUS_LABEL, reservationStatus } from "@/lib/trip";
 
 export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { state, setHotels, replaceAll, reset } = useTrip();
+  const { state, sync, setPasscode, setHotels, replaceAll, reset } = useTrip();
+  const shared = sync.mode !== "local";
   const [hotels, setLocal] = useState(state.hotels);
   const [message, setMessage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,7 +61,8 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
       const candidate = parsed && typeof parsed === "object" && "state" in parsed ? (parsed as { state: unknown }).state : parsed;
       const next = sanitize(candidate);
       if (!next) throw new Error("bad");
-      if (!window.confirm("Replace everything on this device with the imported trip data?")) return;
+      const where = shared ? "the shared trip (for everyone)" : "this device";
+      if (!window.confirm(`Replace everything on ${where} with the imported trip data?`)) return;
       replaceAll(next);
       setMessage(`Imported ${Object.keys(next.items).length} saved items and ${next.custom.length} custom activities.`);
     } catch {
@@ -69,7 +71,11 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title="Trip settings" description="Hotels, backups and printing.">
+    <Dialog open={open} onOpenChange={onOpenChange} title="Trip settings" description="Sharing, hotels, backups and printing.">
+      <SyncSection sync={sync} onPasscode={setPasscode} />
+
+      <hr className="my-5 border-line" />
+
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">Your hotels</h3>
         <p className="text-xs text-ink-muted">Used for “Directions” on hotel stops. Enter the name or address exactly as Google Maps knows it.</p>
@@ -98,8 +104,9 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">Backup & print</h3>
         <p className="text-xs text-ink-muted">
-          Edits are saved in this browser only. They don’t sync between devices automatically — export here and import on your
-          other phone or laptop.
+          {shared
+            ? "Export saves a copy of the shared trip as a file. Import and reset change the trip for everyone."
+            : "Edits are saved in this browser only. Export here and import on your other phone or laptop."}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" onClick={exportJson}>
@@ -131,7 +138,7 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
           variant="ghost"
           className="w-full text-rose-700 dark:text-rose-300"
           onClick={() => {
-            if (window.confirm("Clear every checkmark, note, time edit, booking status and custom activity on this device?")) {
+            if (window.confirm(`Clear every checkmark, note, time edit, booking status and custom activity ${shared ? "for everyone sharing this trip" : "on this device"}?`)) {
               reset();
               setMessage("Everything was reset to the original plan.");
             }
@@ -147,5 +154,67 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         </p>
       )}
     </Dialog>
+  );
+}
+
+function SyncSection({ sync, onPasscode }: { sync: SyncStatus; onPasscode: (code: string) => void }) {
+  const [code, setCode] = useState("");
+  const waiting = sync.pending > 0 ? ` ${sync.pending} change${sync.pending === 1 ? "" : "s"} waiting to sync.` : "";
+
+  return (
+    <section className="space-y-3">
+      <h3 className="flex items-center gap-2 text-sm font-semibold">
+        <Users className="size-4" /> Shared trip
+      </h3>
+      {sync.mode === "checking" && (
+        <p className="flex items-center gap-2 text-xs text-ink-muted">
+          <RefreshCw className="size-3.5 animate-spin" /> Connecting…
+        </p>
+      )}
+      {sync.mode === "local" && (
+        <p className="text-xs text-ink-muted">
+          Not set up yet — edits are saved on this device only. Connect an Upstash Redis database to the project in Vercel to share
+          them live.
+        </p>
+      )}
+      {sync.mode === "synced" && (
+        <p className="text-xs text-ink-muted">
+          <span className="font-medium text-ink">Live.</span> Checkmarks, notes, bookings, your own activities and hotels are shared
+          with everyone using this trip, and update within a few seconds.{waiting}
+        </p>
+      )}
+      {sync.mode === "offline" && (
+        <p className="flex items-start gap-2 text-xs text-ink-muted">
+          <CloudOff className="mt-0.5 size-3.5 shrink-0" />
+          <span>Can’t reach the shared trip right now. Your edits are saved on this phone and will sync when you’re back online.{waiting}</span>
+        </p>
+      )}
+      {sync.mode === "locked" && (
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (code.trim()) onPasscode(code);
+          }}
+        >
+          <p className="text-xs text-ink-muted">This trip is shared with a passcode. Enter it to see and make shared changes.</p>
+          <Label htmlFor="trip-passcode">Trip passcode</Label>
+          <div className="flex gap-2">
+            <Input
+              id="trip-passcode"
+              type="password"
+              autoComplete="off"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Passcode"
+            />
+            <Button type="submit" variant="sakura" className="shrink-0">
+              <KeyRound /> Join
+            </Button>
+          </div>
+          {sync.wrongPasscode && <p className="text-xs text-rose-700 dark:text-rose-300">That passcode didn’t work. Check it and try again.</p>}
+        </form>
+      )}
+    </section>
   );
 }

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Search, Settings2 } from "lucide-react";
+import { KeyRound, Search, Settings2 } from "lucide-react";
+import { useTrip } from "@/components/providers/trip-store";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, isActive } from "./nav-items";
 import { SearchDialog } from "./search-dialog";
@@ -14,6 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { sync } = useTrip();
 
   return (
     <div className="min-h-dvh bg-background text-ink">
@@ -64,6 +66,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
+
+      {sync.mode === "locked" && (
+        <div className="no-print border-b border-line/70 bg-blush/60">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="mx-auto flex min-h-11 w-full max-w-6xl items-center gap-2 px-4 py-2 text-left text-sm"
+          >
+            <KeyRound className="size-4 shrink-0" />
+            <span>
+              This trip is shared. <span className="font-medium underline underline-offset-2">Enter the passcode</span> to see everyone’s
+              updates.
+            </span>
+          </button>
+        </div>
+      )}
 
       <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 md:pb-16">
         {children}

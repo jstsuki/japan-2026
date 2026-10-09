@@ -18,7 +18,7 @@ Also: search across everything (🔍 top bar), dark mode, "Today" mode in Japan 
 ## Honest notes
 
 - **Times are suggestions, not bookings.** Nothing is marked booked until you mark it.
-- **Your edits are saved in this browser (localStorage).** They do **not** sync between devices. To move them, use ⚙︎ → *Export JSON* on one device and *Import JSON* on the other.
+- **Edits can be shared live.** With a database connected (see *Shared trip* below), checkmarks, notes, bookings, custom activities and hotels sync to everyone within a few seconds. Without one, edits stay in that browser (localStorage) and you can move them with ⚙︎ → *Export JSON* / *Import JSON*.
 - **No invented coordinates or addresses.** Maps buttons open Google Maps for the place name + area. Street addresses are shown only where verified (Solaniwa Onsen, Fushimi Inari, Yasaka Shrine, Senso-ji, Cup Noodles Museum Ikeda).
 - Items whose hours, prices or policies weren't verified show **"Verify before visiting"**.
 - Covers are original illustrations (no licensing issues, never broken). To use your own photos see *Photos* below.
@@ -58,7 +58,15 @@ vercel          # answer the prompts, accept the defaults
 vercel --prod   # publish the production URL
 ```
 
-No environment variables or API keys are needed.
+No environment variables or API keys are needed for the app to work. They are only needed for the optional shared trip below.
+
+## Shared trip (live sync, free)
+
+1. In Vercel open the **japan-2026** project → **Storage** → **Create Database** → **Upstash → Redis** → **Free** plan → **Create**, and connect it to the project. This adds `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically.
+2. Optional but recommended: **Settings → Environment Variables** → add `TRIP_PASSCODE` with a passcode of your choice. People then enter it once (⚙︎ → *Shared trip*) before they can see or change shared data.
+3. **Deployments** → ⋯ on the latest one → **Redeploy**, so the new settings take effect.
+
+How it works: every edit is saved on the phone first, then sent to `/api/trip`, which stores the trip in Redis with one field per value, so two people editing different things don't overwrite each other. Phones check for changes every 5 seconds while the app is open. Offline edits are queued and sent when the connection comes back. The first time a phone connects, any edits it already had are added to the shared trip. *Import* and *Reset* in settings change the shared trip for everyone.
 
 ## Customise
 
