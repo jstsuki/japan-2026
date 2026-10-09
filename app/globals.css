@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Palette ─────────────────────────────────────────────── */
+:root {
+  --ivory: #faf8f4;
+  --blush: #f4dde1;
+  --sakura: #e8a5b4;
+  --charcoal: #242424;
+  --matcha: #879d7b;
+  --gold: #c8a76a;
+
+  --background: var(--ivory);
+  --surface: #ffffff;
+  --surface-2: #f3eee7;
+  --ink: #242424;
+  --ink-muted: #6b6460;
+  --ink-faint: #a39b95;
+  --line: #e9e2d9;
+  --sakura-ink: #b25a70;
+  --matcha-ink: #4f6344;
+  --gold-ink: #86672e;
+}
+
+.dark {
+  --background: #131212;
+  --surface: #1c1a1a;
+  --surface-2: #262323;
+  --ink: #f3eee8;
+  --ink-muted: #b3aaa3;
+  --ink-faint: #7c7570;
+  --line: #312c2b;
+  --blush: #3b272d;
+  --sakura-ink: #efb6c3;
+  --matcha-ink: #b9cdad;
+  --gold-ink: #dcc08a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-ivory: var(--ivory);
+  --color-blush: var(--blush);
+  --color-sakura: var(--sakura);
+  --color-charcoal: var(--charcoal);
+  --color-matcha: var(--matcha);
+  --color-gold: var(--gold);
+  --color-sakura-ink: var(--sakura-ink);
+  --color-matcha-ink: var(--matcha-ink);
+  --color-gold-ink: var(--gold-ink);
+
+  --font-display: var(--font-display-family), "Cormorant Garamond", "Iowan Old Style", Georgia, "Hiragino Mincho ProN", serif;
+  --font-sans: var(--font-sans-family), ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", "Hiragino Sans", system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(36 36 36 / 0.04), 0 10px 28px -16px rgb(36 36 36 / 0.16);
+  --shadow-lift: 0 2px 8px rgb(36 36 36 / 0.06), 0 28px 56px -24px rgb(36 36 36 / 0.4);
+}
+
+/* ── Base ────────────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  scroll-padding-top: 8rem;
+}
+
+body {
+  background: var(--background);
+  color: var(--ink);
+  overflow-x: clip;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--sakura);
+  color: var(--charcoal);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Highlight a deep-linked card */
+@keyframes focus-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--sakura) 55%, transparent);
+  }
+}
+.focus-pulse > * {
+  animation: focus-pulse 1.1s ease-in-out 2;
+  border-radius: 1.5rem;
+}
+
+/* Native <dialog> sheet */
+dialog.sheet {
+  max-height: 92dvh;
+}
+dialog.sheet::backdrop {
+  background: rgb(20 18 18 / 0.45);
+  backdrop-filter: blur(4px);
+}
+dialog.sheet[open] {
+  animation: sheet-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Print ───────────────────────────────────────────────── */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  :root,
+  .dark {
+    --background: #fff;
+    --surface: #fff;
+    --ink: #111;
+    --ink-muted: #555;
+    --line: #ddd;
+  }
+  body {
+    background: #fff !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .print-day {
+    break-inside: avoid-page;
+  }
+  a {
+    text-decoration: none;
+  }
+}
